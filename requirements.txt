@@ -1,0 +1,31 @@
+
+ipdb
+
+neuprint-python
+
+
+# (VoxelMorph Atlas Building Demo)
+# https://colab.research.google.com/drive/1SkQbrWTQHpQFrG4J2WoBgGZC9yAzUas2
+tensorflow==2.4.1
+
+tensorflow_addons
+
+# https://github.com/adalca/pystrum
+-e ../pystrum
+
+# adalca/neurite
+-e ../neurite
+
+# voxelmorph/voxelmorph
+-e ../voxelmorph
+
+
+# For processing .obj format atlas
+#pywavefront
+# try to switch this back to pywavefront or something less annoying to install
+#git+https://github.com/PyMesh/PyMesh.git
+trimesh
+
+
+# For viewing
+pyglet
