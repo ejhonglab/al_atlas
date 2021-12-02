@@ -1,14 +1,15 @@
 
 This repository contains data from:
-"Elucidating the Neuronal Architecture of Olfactory Glomeruli in the Drosophila Antennal
-Lobe" by Grabe et al (2016).
+
+Grabe V, Baschwitz A, Dweck HKM, Lavista-Llanos S, Hansson BS, Sachse S. Elucidating the Neuronal Architecture of Olfactory Glomeruli in the Drosophila Antennal Lobe. Cell Rep. 2016 Sep 20;16(12):3401-3413. doi: [10.1016/j.celrep.2016.08.063](https://doi.org/10.1016/j.celrep.2016.08.063)
 
 
 ### Previously online data
 
 The following files were previously available here: http://www.ice.mpg.de/ext/index.php?id=invivoALatlas
-- `invivoALatlas.pdf`
-- `invivoALstack.tif`
+- [`invivoALatlas.pdf`](invivoALatlas.pdf?raw=1)
+- [`invivoALstack.tif`](invivoALstack.tif?raw=1)
+
 ...though now that link is dead and I could not find another link after a bit of
 searching.
 
