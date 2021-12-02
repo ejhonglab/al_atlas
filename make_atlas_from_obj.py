@@ -46,7 +46,7 @@ def graph_cluster(data, epsilon):
 
 def main():
     obj_path = join(
-        'cs-transfer', 'Merged_2-101221a-labels_only_sure_ones_Sensillarcolors.obj'
+        'from_veit', 'Merged_2-101221a-labels_only_sure_ones_Sensillarcolors.obj'
     )
 
     #window = pyglet.window.Window()

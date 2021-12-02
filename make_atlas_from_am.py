@@ -34,7 +34,7 @@ from ahds import AmiraFile, AmiraHeader
 
 
 def main():
-    amira_dir = 'cs-transfer'
+    amira_dir = 'from_veit'
     prefix = join(amira_dir, 'Merged_2-101221a-labels_only_sure_ones_Sensillarcolors.')
 
     #am = AmiraFile(prefix + 'am')
