@@ -1,23 +1,23 @@
 
 ipdb
 
-neuprint-python
+#neuprint-python
 
 
 # (VoxelMorph Atlas Building Demo)
 # https://colab.research.google.com/drive/1SkQbrWTQHpQFrG4J2WoBgGZC9yAzUas2
-tensorflow==2.4.1
+#tensorflow==2.4.1
 
-tensorflow_addons
+#tensorflow_addons
 
 # https://github.com/adalca/pystrum
--e ../pystrum
+#-e ../pystrum
 
 # adalca/neurite
--e ../neurite
+#-e ../neurite
 
 # voxelmorph/voxelmorph
--e ../voxelmorph
+#-e ../voxelmorph
 
 
 # For processing .obj format atlas
@@ -26,6 +26,11 @@ tensorflow_addons
 #git+https://github.com/PyMesh/PyMesh.git
 trimesh
 
-
 # For viewing
 pyglet
+
+# TODO delete if i don't end up using the DBSCAN code in make_atlas_from_obj.py
+scikit-learn
+
+# TODO also delete if not using
+networkx

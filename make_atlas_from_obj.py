@@ -3,13 +3,9 @@
 from os.path import join
 
 import numpy as np
-from mpl_toolkits import mplot3d
-import matplotlib.pyplot as plt
-#import pywavefront
-#from pywavefront import visualization as vis
 import pyglet
-#import pymesh
 import trimesh
+from trimesh import PointCloud
 
 
 # https://stackoverflow.com/questions/47974874
@@ -78,7 +74,6 @@ def main():
     '''
 
     vertices = np.array(mesh.vertices)
-    faces = np.array(mesh.faces)
 
 
     # TODO implement a binary search for each digit (or something less stupid?) to find
@@ -89,12 +84,6 @@ def main():
     # NOTE: couldn't actually figure out how to use the output of this, or whether it
     # was useful at all
     clusters = trimesh.grouping.clusters(vertices, 0.0192)
-
-    '''
-    def get_mesh(vertex_indices):
-        # TODO how to know which faces to include? (diff length than list of vertices)
-        Trimesh()
-    '''
 
     #def mesh_from_connected_faces(start_vertex_index):
     #    vertex_faces = 
@@ -133,6 +122,8 @@ def main():
 
     print('# vertices:', len(vertices))
     print('# clustered vertices:', sum([len(xs) for xs in clusters]))
+    del vertices
+
 
     def n_total_of(meshes, of):
         return sum([len(getattr(mesh, of)) for mesh in meshes])
@@ -212,31 +203,179 @@ def main():
         if len(mesh) == 0:
             # Same thing trimesh does if start_loop=True
             pyglet.app.run()
-            return
         else:
             assert len(mesh) == 1
             mesh = mesh[0]
 
-        mesh.show(smooth=False, start_loop=block, **kwargs)
+            if isinstance(mesh, trimesh.Trimesh):
+                flags = {'wireframe': True}
+            else:
+                flags = None
 
-    for mesh in split_meshes:
-        # TODO why are there some meshes w/ length 1 mesh.vertices?
-        if len(mesh.vertices) == 1:
-            continue
+            #mesh.show(smooth=False, start_loop=block, flags=flags, **kwargs)
 
-        # Since some of the "repair" operations change the mesh.
-        orig = mesh.copy()
+    transparency_rgb = tuple([x for x in orig_mesh.visual.face_colors[0][:3]])
+    # 0.4 was OK for mesh but seems way too high for points (unless there's another
+    # problem)
+    alpha = 0.4
+    alpha_u8 = int(round(alpha * 255))
+    transparency_rgba = transparency_rgb + (alpha_u8,)
 
-        mesh.fix_normals()
-        mesh.fill_holes()
+    orig_mesh.visual.face_colors = transparency_rgba
 
-        for m, name in ((orig, 'orig'), (mesh, 'repaired')):
-            print(name)
-            print(f'watertight? {m.is_watertight}')
-            print_n_vertices_and_faces(m)
-            print()
+    focus_u8_alpha = 190
+    focus_color_rgba = (255, 0, 0, focus_u8_alpha)
+    shared_vertex_color_rgba = (0, 255, 0, focus_u8_alpha)
 
-            show(m, block=False, caption=name)
+    vertex2orig_idx = {tuple(x): i for i, x in enumerate(orig_mesh.vertices)}
+    def convert_face_indices_to_orig(mesh):
+        return np.array([[vertex2orig_idx[tuple(x)] for x in mesh.vertices[face]]
+            for face in mesh.faces
+        ])
+
+    face2face_idx = {tuple(x): i for i, x in enumerate(orig_mesh.faces)}
+    def get_orig_faces_mask(orig_face_indices):
+        mask = np.ones(len(orig_mesh.faces), dtype=np.bool_)
+        masked_indices = [face2face_idx[tuple(face)] for face in orig_face_indices]
+        mask[masked_indices] = False
+        return mask
+
+
+    print(f'{len(split_meshes)} meshes after splitting with face adjacencies')
+
+    #from pprint import pprint
+    #pprint(sorted([len(x.vertices) for x in split_meshes]))
+    #pprint(sorted([len(x.faces) for x in split_meshes]))
+
+    # NOTE: there is also a fair bit of stuff with 2, 3, and other low numbers of faces
+    # (with no obvious sharpj dropoff in counts at a particular value)
+    min_faces = 2
+
+    split_meshes = [x for x in split_meshes if len(x.faces) >= min_faces]
+    print(f'{len(split_meshes)} split meshes after removing those with <{min_faces}'
+        ' faces\n'
+    )
+
+    # TODO TODO probably build a data structure of points -> faces/bodies that contain
+    # them. want to be able to search for additional faces to merge into ROIs w/ a big
+    # missing component.
+
+    for i, mesh in enumerate(split_meshes):
+
+        #print(f'watertight? {mesh.is_watertight}')
+        n_vertices, n_faces = print_n_vertices_and_faces(mesh)
+
+        curr_vertex_set = {tuple(x) for x in mesh.vertices}
+
+        minus_curr = orig_mesh.copy()
+        orig_face_indices = convert_face_indices_to_orig(mesh)
+        mask = get_orig_faces_mask(orig_face_indices)
+        # TODO TODO is it just some artifact of how i'm generating this that the
+        # interior face i expected (thought to be shared by some neighboring glomeruli)
+        # just isn't there at all??? (seems so)
+        # TODO TODO maybe comparison to plots of the vertices alone could help clarify?
+        minus_curr.update_faces(mask)
+
+        minus_curr.remove_unreferenced_vertices()
+
+        minus_curr_vertex_set = {tuple(x) for x in minus_curr.vertices}
+
+        # TODO maybe also show this just w/in bounds defining 3d bbox
+        #show(minus_curr, caption='everything except current mesh', block=False)
+
+        n_less_vertices = len(orig_mesh.vertices) - len(minus_curr.vertices)
+        n_less_faces = len(orig_mesh.faces) - len(minus_curr.faces)
+        print()
+        print('after filtering current mesh faces from everything:')
+        # NOTE: this is (at least in first example) less than the number of vertices
+        # in mesh. implies some of these vertices participate in faces that would get
+        # split into other meshes...
+        print(f'{n_less_vertices} less vertices')
+        print(f'{n_less_faces} less faces')
+
+        #show(PointCloud(mesh.vertices, colors=focus_color_rgba), block=False,
+        #    caption='current mesh vertices'
+        #)
+
+        beyond_bounds = 0.0
+
+        # TODO is "axis aligned" in `trimesh.bounds.contains` docs same as 'oriented'
+        # here? and does it actually matter? the non-oriented version seems to have
+        # bounds more like what i want / expect
+        #bounds = np.array(mesh.bounding_box_oriented.bounds)
+        bounds = np.array(mesh.bounding_box.bounds)
+
+        bounds[0] -= beyond_bounds / 2
+        bounds[1] += beyond_bounds / 2
+
+        def in_bounds(vs):
+            mask = trimesh.bounds.contains(bounds, vs)
+            return vs[mask]
+
+        vertices_in_curr_mask = np.array([
+            tuple(x) in curr_vertex_set for x in orig_mesh.vertices
+        ])
+
+        shared_vertex_set = minus_curr_vertex_set & curr_vertex_set
+        shared_vertex_mask = np.array([
+            tuple(x) in shared_vertex_set for x in orig_mesh.vertices
+        ])
+
+        print(f'{len(shared_vertex_set)} shared vertices')
+
+        shared_vertex_indices = set(np.where(shared_vertex_mask)[0])
+        for j, other_mesh in enumerate(split_meshes):
+            if i == j:
+                continue
+
+            # TODO maybe try starting w/ trimesh.graph.shared_edges rather than
+            # computing shared points and trying to find faces from there
+
+            other_orig_face_indices = convert_face_indices_to_orig(other_mesh)
+            other_unq_vertex_indices = set(np.unique(other_orig_face_indices))
+
+            overlap = other_unq_vertex_indices & shared_vertex_indices
+            if len(overlap) == 0:
+                continue
+
+            print(f'{i}-{j}: {len(overlap)} of shared points')
+
+            #import ipdb; ipdb.set_trace()
+
+        import ipdb; ipdb.set_trace()
+
+        full_vertex_colors = np.array([
+            transparency_rgba for _ in range(len(orig_mesh.vertices))
+        ])
+        full_vertex_colors[vertices_in_curr_mask] = focus_color_rgba
+
+        bound_mask = trimesh.bounds.contains(bounds, orig_mesh.vertices)
+        bound_colors = full_vertex_colors[bound_mask]
+
+        show(PointCloud(orig_mesh.vertices[bound_mask], colors=bound_colors),
+            block=False, caption='all vertices'
+        )
+
+        full_vertex_colors[shared_vertex_mask] = shared_vertex_color_rgba
+        bound_colors = full_vertex_colors[bound_mask]
+
+        # NOTE: syntax for adding meshes before viewing didn't seem to work w/ point
+        # clouds
+        show(PointCloud(orig_mesh.vertices[bound_mask], colors=bound_colors),
+            block=False, caption='all vertices (shared highlighted)'
+        )
+
+        vertices_minus_curr = orig_mesh.vertices[~ vertices_in_curr_mask]
+
+        show(PointCloud(in_bounds(vertices_minus_curr), colors=transparency_rgba),
+            block=False, caption='all vertices except from current mesh'
+        )
+
+        show(mesh, block=False)
+
+        mesh.visual.face_colors = focus_color_rgba
+
+        show(orig_mesh + mesh, caption='overlay', block=False)
 
         show()
 
