@@ -45,9 +45,17 @@ def graph_cluster(data, epsilon):
 
 
 def main():
+    # Everything
     obj_path = join(
         'from_veit', 'Merged_2-101221a-labels_only_sure_ones_Sensillarcolors.obj'
     )
+    # Just DL5 and DM4 (though in same OBJ, rather than as two OBJ files, each with one
+    # mesh, like I wanted)
+    '''
+    obj_path = join(
+        'from_veit', '2021-01-12', 'Merged_2-101221a-labels_only_DL5_and_DM4.surf.obj'
+    )
+    '''
 
     #window = pyglet.window.Window()
 
@@ -154,6 +162,8 @@ def main():
     n_orig_vertices, n_orig_faces = print_n_vertices_and_faces(mesh)
     print()
 
+    # Either True or False seems to produce the same result on the file Veit gave me
+    # with both DL5 and DM4 (and a good result too).
     split_meshes = mesh.split(only_watertight=False)
     # NOTE: this has slightly more vertices / faces in total, presumably because
     # duplication across meshes (vertex adjacency w/o face adjacency?)
@@ -212,7 +222,7 @@ def main():
             else:
                 flags = None
 
-            #mesh.show(smooth=False, start_loop=block, flags=flags, **kwargs)
+            mesh.show(smooth=False, start_loop=block, flags=flags, **kwargs)
 
     transparency_rgb = tuple([x for x in orig_mesh.visual.face_colors[0][:3]])
     # 0.4 was OK for mesh but seems way too high for points (unless there's another
@@ -259,12 +269,21 @@ def main():
     # TODO TODO probably build a data structure of points -> faces/bodies that contain
     # them. want to be able to search for additional faces to merge into ROIs w/ a big
     # missing component.
+    show(orig_mesh, caption='original mesh')
 
     for i, mesh in enumerate(split_meshes):
+        print(f'mesh split: {i}')
 
-        #print(f'watertight? {mesh.is_watertight}')
+        print(f'watertight? {mesh.is_watertight}')
         n_vertices, n_faces = print_n_vertices_and_faces(mesh)
 
+        show(mesh, caption=f'split {i}', block=False)
+
+        mesh.visual.face_colors = focus_color_rgba
+
+        show(orig_mesh + mesh, caption=f'split {i} overlay', block=False)
+
+        '''
         curr_vertex_set = {tuple(x) for x in mesh.vertices}
 
         minus_curr = orig_mesh.copy()
@@ -342,7 +361,7 @@ def main():
 
             #import ipdb; ipdb.set_trace()
 
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
 
         full_vertex_colors = np.array([
             transparency_rgba for _ in range(len(orig_mesh.vertices))
@@ -366,24 +385,18 @@ def main():
         )
 
         vertices_minus_curr = orig_mesh.vertices[~ vertices_in_curr_mask]
+        import ipdb; ipdb.set_trace()
 
         show(PointCloud(in_bounds(vertices_minus_curr), colors=transparency_rgba),
             block=False, caption='all vertices except from current mesh'
         )
+        '''
 
-        show(mesh, block=False)
-
-        mesh.visual.face_colors = focus_color_rgba
-
-        show(orig_mesh + mesh, caption='overlay', block=False)
-
-        show()
-
-        import ipdb; ipdb.set_trace()
+        #show()
+        #import ipdb; ipdb.set_trace()
         print()
 
-    show(orig_mesh)
-
+    show()
     import ipdb; ipdb.set_trace()
 
 
