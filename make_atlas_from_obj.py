@@ -44,6 +44,23 @@ def graph_cluster(data, epsilon):
     return clusters, len(clusters)
 
 
+def show(*mesh, block=True, **kwargs):
+
+    if len(mesh) == 0:
+        # Same thing trimesh does if start_loop=True
+        pyglet.app.run()
+    else:
+        assert len(mesh) == 1
+        mesh = mesh[0]
+
+        if isinstance(mesh, trimesh.Trimesh):
+            flags = {'wireframe': True}
+        else:
+            flags = None
+
+        mesh.show(smooth=False, start_loop=block, flags=flags, **kwargs)
+
+
 def main():
     # Everything
     obj_path = join(
@@ -63,6 +80,13 @@ def main():
 
     #vis.draw(obj)
     #pyglet.app.run()
+
+    left_objs_dir = join('from_veit', '2022-01-18', '220118 - glomerular OBJs')
+
+    left_dl5 = trimesh.load(join(left_objs_dir, 'left-AL_DL5.Labels8.obj'))
+    left_dm4 = trimesh.load(join(left_objs_dir, 'left-AL_DM4.Labels6.obj'))
+
+    show(left_dl5 + left_dm4, caption='Left DL5 and DM4')
 
     mesh = trimesh.load(obj_path)
 
@@ -207,22 +231,6 @@ def main():
     assert len(orig_only_vertex_set) == 0
     assert len(orig_only_face_set) == 0
     '''
-
-    def show(*mesh, block=True, **kwargs):
-
-        if len(mesh) == 0:
-            # Same thing trimesh does if start_loop=True
-            pyglet.app.run()
-        else:
-            assert len(mesh) == 1
-            mesh = mesh[0]
-
-            if isinstance(mesh, trimesh.Trimesh):
-                flags = {'wireframe': True}
-            else:
-                flags = None
-
-            mesh.show(smooth=False, start_loop=block, flags=flags, **kwargs)
 
     transparency_rgb = tuple([x for x in orig_mesh.visual.face_colors[0][:3]])
     # 0.4 was OK for mesh but seems way too high for points (unless there's another
