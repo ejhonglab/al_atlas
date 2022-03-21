@@ -392,8 +392,8 @@ def main():
         )
         '''
 
-        #show()
-        #import ipdb; ipdb.set_trace()
+        show()
+        import ipdb; ipdb.set_trace()
         print()
 
     show()
