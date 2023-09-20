@@ -39,6 +39,9 @@ sudo apt update
 
 sudo apt install libxml2:i386 libcanberra-gtk-module:i386 gtk2-engines-murrine:i386 libatk-adaptor:i386
 
+# On versions of Ubuntu >=22.04, we also need this dependency:
+sudo apt-get install libgdk-pixbuf2.0-0:i386
+
 sudo dpkg -i ~/adobe.deb
 ```
 
